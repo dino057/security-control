@@ -27,7 +27,6 @@ public:
     const std::vector<Room*>& getRooms() const;
     const std::vector<Door*>& getDoors() const;
     const std::vector<Person*>& getPeople() const;
-    bool isFinished() const;
 
 private:
     void clearDynamicObjects();
@@ -35,11 +34,10 @@ private:
     bool parseDoorsAndPeople(const std::string& fileName, std::string& errorMessage);
     void movePeople();
     void checkSensors();
-    Room* getNextRoomTowards(Room* start, Room* target);
 
-    // Te wskazniki pokazuja reczne zarzadzanie pamiecia.
-    // Obiekty powstaja przez new w konstruktorze lub podczas wczytywania mapy,
-    // a potem sa usuwane przez delete w destruktorze albo przy resecie.
+    // Nowy parametr: avoidGuards pozwala intruzowi inteligentnie omijac pokoje z ochrona
+    Room* getNextRoomTowards(Room* start, Room* target, bool avoidGuards = false);
+
     EventLog* eventLog;
     Building* building;
     AlarmSystem* alarmSystem;

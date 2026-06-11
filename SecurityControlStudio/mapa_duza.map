@@ -1,33 +1,23 @@
-# SCENARIUSZ: Infiltracja tajnego kompleksu badawczego
-# Pelna siatka 4x4 - 16 pokoi
-
-# --- POKOJE (Siatka 4 rzedy po 4 pokoje) ---
-# Rząd 1: Strefa Zewnętrzna
 ROOM 1 Brama_Glowna
 ROOM 2 Dziedziniec
 ROOM 3 Parking_Podziemny
 ROOM 4 Garaz_Dostawczy
 
-# Rząd 2: Strefa Administracyjna
 ROOM 5 Recepcja
 ROOM 6 Korytarz_Glowny
 ROOM 7 Stolowka
 ROOM 8 Pokoj_Ochrony
 
-# Rząd 3: Strefa Czysta (Lab)
 ROOM 9 Sluza_Dezynfekcyjna
 ROOM 10 Korytarz_Laboratoryjny
 ROOM 11 Magazyn_Odczynnikow
 ROOM 12 Laboratorium_Alfa
 
-# Rząd 4: Strefa Sciśle Tajna
 ROOM 13 Klatka_Schodowa
 ROOM 14 Biura_Zarzadu
 ROOM 15 Archiwum_Tajne
 ROOM 16 Glowny_Reaktor
 
-# --- DRZWI (Połączenia siatki) ---
-# Poziome:
 DOOR 1 2
 DOOR 2 3
 DOOR 3 4
@@ -40,7 +30,6 @@ DOOR 11 12
 DOOR 13 14
 DOOR 14 15
 DOOR 15 16
-# Pionowe:
 DOOR 1 5
 DOOR 2 6
 DOOR 3 7
@@ -54,20 +43,20 @@ DOOR 10 14
 DOOR 11 15
 DOOR 12 16
 
-# --- POSTACIE ---
-# Pracownicy (losowo rozpierzchną się po placówce w ułamku sekundy)
-PERSON EMPLOYEE Naukowiec_Zbychu Karta_N1 1
-PERSON EMPLOYEE Technik_Andrzej Karta_T2 1
+# DRZWI NA SKOS (SKRÓTY) - TE DRZWI POJAWIĄ SIĘ DOPIERO GDY ZBUDUJESZ PROGRAM
+DOOR 1 6
+DOOR 2 5
+DOOR 10 15
+DOOR 11 16
+DOOR 8 11
 
-# Ochrona (Rozstawieni w kluczowych punktach)
-PERSON GUARD Dowodca_Ochrony 8
-PERSON GUARD Patrolujacy_Straznik 5
-
-# Intruz (Szpieg wchodzi przez Bramę - ID 1, szuka dostępu do Reaktora - ID 16)
-PERSON INTRUDER Szpieg_Agent_007 1 16
-
-# --- KAMERY ---
 CAMERA 5
 CAMERA 6
 CAMERA 10
 CAMERA 15
+
+PERSON EMPLOYEE Naukowiec_Zbychu Karta_N1 1
+PERSON EMPLOYEE Technik_Andrzej Karta_T2 1
+PERSON GUARD Dowodca_Ochrony 8
+PERSON GUARD Patrolujacy_Straznik 5
+PERSON INTRUDER Szpieg_Agent_007 1 16

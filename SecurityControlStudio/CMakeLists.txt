@@ -61,8 +61,7 @@ target_link_libraries(SecurityControlStudio PRIVATE
     Qt${QT_VERSION_MAJOR}::Widgets
 )
 
-# Mapa testowa jest kopiowana obok pliku .exe po zbudowaniu programu.
-# Dzieki temu przycisk Start moze ja znalezc bez recznego wskazywania pliku.
+
 add_custom_command(TARGET SecurityControlStudio POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         ${CMAKE_CURRENT_SOURCE_DIR}/mapa_mala.map

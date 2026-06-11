@@ -384,7 +384,22 @@ void Simulation::movePeople()
 
         if (globalTarget != nullptr && globalTarget != currentRoom)
         {
-            Room* nextStep = getNextRoomTowards(currentRoom, globalTarget);
+            Room* nextStep = nullptr;
+
+            // SZTUCZNA INTELIGENCJA INTRUZA: Probuje ominac straznikow!
+            if (person->getKind() == "intruz" && alarm)
+            {
+                nextStep = getNextRoomTowards(currentRoom, globalTarget, true); // tryb bezpieczny (bez strażników)
+                if (nextStep == nullptr)
+                {
+                    nextStep = getNextRoomTowards(currentRoom, globalTarget, false); // desperacka ucieczka
+                }
+            }
+            else
+            {
+                nextStep = getNextRoomTowards(currentRoom, globalTarget, false);
+            }
+
             if (nextStep != nullptr)
             {
                 bool canPass = true;
@@ -474,7 +489,7 @@ void Simulation::checkSensors()
     }
 }
 
-Room* Simulation::getNextRoomTowards(Room* start, Room* target)
+Room* Simulation::getNextRoomTowards(Room* start, Room* target, bool avoidGuards)
 {
     if (start == nullptr || target == nullptr || start == target) return nullptr;
 
@@ -507,7 +522,23 @@ Room* Simulation::getNextRoomTowards(Room* start, Room* target)
         for (std::size_t i = 0; i < roomDoors.size(); ++i)
         {
             Room* next = roomDoors[i]->getOtherRoom(current);
-            if (next != nullptr && std::find(visited.begin(), visited.end(), next) == visited.end())
+
+            // Jesli szukamy bezpiecznej drogi, sprawdzamy czy w nastepnym pokoju jest ochroniarz
+            bool hasGuard = false;
+            if (avoidGuards && next != target && next != nullptr)
+            {
+                const std::vector<Person*>& peeps = next->getPeople();
+                for (std::size_t p = 0; p < peeps.size(); ++p)
+                {
+                    if (peeps[p]->getKind() == "ochroniarz")
+                    {
+                        hasGuard = true;
+                        break;
+                    }
+                }
+            }
+
+            if (next != nullptr && !hasGuard && std::find(visited.begin(), visited.end(), next) == visited.end())
             {
                 visited.push_back(next);
                 parent[next] = current;

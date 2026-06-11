@@ -3,6 +3,7 @@
 #include "Person.h"
 #include "Room.h"
 #include "Simulation.h"
+#include "Intruder.h" // POTRZEBNE DO SPRAWDZENIA STATUSU KRADZIEZY
 
 #include <QPainter>
 #include <QPaintEvent>
@@ -88,7 +89,7 @@ QMap<const Room*, QRectF> BuildingView::calculateRoomRects() const
     int rows = static_cast<int>(std::ceil(static_cast<double>(count) / columns));
 
     int margin = 26;
-    int topLegendSpace = 28;
+    int topLegendSpace = 55; // Powiekszone miejsce na dwurzedowa legende!
     double availableWidth = width() - 2.0 * margin;
     double availableHeight = height() - 2.0 * margin - topLegendSpace;
     double cellWidth = availableWidth / columns;
@@ -207,13 +208,41 @@ void BuildingView::drawPeople(QPainter& painter, const QMap<const Room*, QRectF>
                                 startPoint.y() + (targetPoint.y() - startPoint.y()) * animationProgress);
         }
 
-        QColor personColor = person->hasAccess() ? QColor(37, 138, 87) : QColor(205, 48, 48);
+        // --- ZARZADZANIE KOLORAMI I ZNACZNIKAMI ---
+        QColor personColor;
+        QString initial = QString::fromStdString(person->getName()).left(1).toUpper();
+        bool isThiefWithLoot = false;
 
-        painter.setPen(QPen(QColor(255, 255, 255), 2));
+        if (person->getKind() == "intruz")
+        {
+            personColor = QColor(205, 48, 48); // ZAWSZE Czerwony intruz
+            Intruder* intr = static_cast<Intruder*>(person);
+            if (intr->isMissionAccomplished())
+            {
+                isThiefWithLoot = true;
+                initial = "$"; // Zmienia inicjal na znak kradziezy
+            }
+        }
+        else if (person->getKind() == "ochroniarz")
+        {
+            personColor = QColor(41, 128, 185); // Ochroniarz Niebieski
+        }
+        else
+        {
+            personColor = QColor(37, 138, 87); // Pracownik Zielony
+        }
+
+        if (isThiefWithLoot)
+        {
+            painter.setPen(QPen(QColor(241, 196, 15), 3)); // Zlota obwodka lupu
+        }
+        else
+        {
+            painter.setPen(QPen(QColor(255, 255, 255), 2)); // Zwykla biala obwodka
+        }
+
         painter.setBrush(personColor);
         painter.drawEllipse(drawPoint, 12, 12);
-
-        QString initial = QString::fromStdString(person->getName()).left(1).toUpper();
 
         painter.setPen(QColor(255, 255, 255));
         painter.setFont(QFont("Arial", 9, QFont::Bold));
@@ -225,20 +254,42 @@ void BuildingView::drawLegend(QPainter& painter)
 {
     painter.setFont(QFont("Arial", 9));
 
-    painter.setPen(Qt::NoPen);
-    painter.setBrush(QColor(37, 138, 87));
-    painter.drawEllipse(QPointF(24, 17), 7, 7);
-    painter.setPen(QColor(40, 45, 55));
-    painter.drawText(38, 21, "pracownik");
+    // WIERSZ 1
+    int y1 = 12;
+    // Pracownik
+    painter.setPen(Qt::NoPen); painter.setBrush(QColor(37, 138, 87));
+    painter.drawEllipse(QPointF(20, y1), 6, 6);
+    painter.setPen(QColor(40, 45, 55)); painter.drawText(32, y1 + 4, "pracownik");
 
-    painter.setPen(Qt::NoPen);
-    painter.setBrush(QColor(205, 48, 48));
-    painter.drawEllipse(QPointF(122, 17), 7, 7);
-    painter.setPen(QColor(40, 45, 55));
-    painter.drawText(136, 21, "intruz");
+    // Ochroniarz
+    painter.setPen(Qt::NoPen); painter.setBrush(QColor(41, 128, 185));
+    painter.drawEllipse(QPointF(110, y1), 6, 6);
+    painter.setPen(QColor(40, 45, 55)); painter.drawText(122, y1 + 4, "ochroniarz");
 
+    // Intruz
+    painter.setPen(Qt::NoPen); painter.setBrush(QColor(205, 48, 48));
+    painter.drawEllipse(QPointF(200, y1), 6, 6);
+    painter.setPen(QColor(40, 45, 55)); painter.drawText(212, y1 + 4, "intruz");
+
+    // Intruz z lupem
+    painter.setPen(QPen(QColor(241, 196, 15), 2)); painter.setBrush(QColor(205, 48, 48));
+    painter.drawEllipse(QPointF(270, y1), 6, 6);
+    painter.setPen(QColor(255, 255, 255)); painter.setFont(QFont("Arial", 7, QFont::Bold));
+    painter.drawText(QRectF(264, y1 - 6, 12, 12), Qt::AlignCenter, "$");
+    painter.setFont(QFont("Arial", 9));
+    painter.setPen(QColor(40, 45, 55)); painter.drawText(282, y1 + 4, "z lupem");
+
+    // WIERSZ 2
+    int y2 = 30;
+    // Kamera
+    painter.setPen(QPen(QColor(255, 255, 255), 1)); painter.setBrush(QColor(41, 128, 185));
+    painter.drawEllipse(QRectF(14, y2 - 6, 12, 12));
+    painter.setFont(QFont("Arial", 7, QFont::Bold)); painter.drawText(QRectF(14, y2 - 6, 12, 12), Qt::AlignCenter, "K");
+    painter.setFont(QFont("Arial", 9));
+    painter.setPen(QColor(40, 45, 55)); painter.drawText(32, y2 + 4, "kamera");
+
+    // Drzwi
     painter.setPen(QPen(QColor(190, 42, 42), 3, Qt::DashLine));
-    painter.drawLine(205, 17, 250, 17);
-    painter.setPen(QColor(40, 45, 55));
-    painter.drawText(260, 21, "drzwi zablokowane");
+    painter.drawLine(110, y2, 140, y2);
+    painter.setPen(QColor(40, 45, 55)); painter.drawText(148, y2 + 4, "drzwi zablokowane");
 }
