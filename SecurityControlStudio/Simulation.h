@@ -23,6 +23,7 @@ public:
 
     std::string getLogText() const;
     bool isLoaded() const;
+    bool isFinished() const;
     int getStepNumber() const;
     const std::vector<Room*>& getRooms() const;
     const std::vector<Door*>& getDoors() const;
