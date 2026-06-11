@@ -1,0 +1,29 @@
+# SCENARIUSZ: Napad na lokalny oddzial banku
+# Mapa zawiera 6 pomieszczen w ukladzie "litery L"
+
+# --- POKOJE ---
+ROOM 1 Wejscie_Glowne
+ROOM 2 Poczekalnia
+ROOM 3 Obsluga_Klienta
+ROOM 4 Zaplecze_Dla_Personelu
+ROOM 5 Korytarz_Pancerny
+ROOM 6 Skarbiec
+
+# --- DRZWI ---
+DOOR 1 2
+DOOR 2 3
+DOOR 3 4
+DOOR 4 5
+DOOR 5 6
+DOOR 2 5
+DOOR 1 4
+
+# --- POSTACIE ---
+# Pracownik (zacznie w losowym miejscu na mapie)
+PERSON EMPLOYEE Kasjerka_Anna KARTA_B1 1
+
+# Ochroniarz (Stoi na poczatku w Poczekalni, zeby pilnowac wejscia)
+PERSON GUARD Straznik_Bankowy 2
+
+# Intruz (Zlodziej wchodzi przez Wejscie i ma jeden cel: Skarbiec)
+PERSON INTRUDER Zlodziej_Maska 1 6

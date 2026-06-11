@@ -1,0 +1,61 @@
+# Rozbudowana siatka budynku 4x4 (16 pokoi)
+# Rząd 1
+ROOM 1 Wejscie
+ROOM 2 Korytarz_A
+ROOM 3 Biuro_1
+ROOM 4 Skarbiec
+# Rząd 2
+ROOM 5 Hol_Glowny
+ROOM 6 Recepcja
+ROOM 7 Korytarz_B
+ROOM 8 Magazyn
+# Rząd 3
+ROOM 9 Kuchnia
+ROOM 10 Sala_Konferencyjna
+ROOM 11 Przedpokoj_Lab
+ROOM 12 Laboratorium
+# Rząd 4
+ROOM 13 Archiwum
+ROOM 14 Kotlownia
+ROOM 15 Korytarz_C
+ROOM 16 Serwerownia
+
+# POŁĄCZENIA DRZWI (Siatka pozioma i pionowa)
+# Drzwi w poziomie:
+DOOR 1 2
+DOOR 2 3
+DOOR 3 4
+DOOR 5 6
+DOOR 6 7
+DOOR 7 8
+DOOR 9 10
+DOOR 10 11
+DOOR 11 12
+DOOR 13 14
+DOOR 14 15
+DOOR 15 16
+# Drzwi w pionie:
+DOOR 1 5
+DOOR 2 6
+DOOR 3 7
+DOOR 4 8
+DOOR 5 9
+DOOR 6 10
+DOOR 7 11
+DOOR 8 12
+DOOR 9 13
+DOOR 10 14
+DOOR 11 15
+DOOR 12 16
+
+# LUDZIE W BUDYNKU
+# Pracownicy (Jan w biurze, Ola w laboratorium)
+PERSON EMPLOYEE Jan RFID_01 3
+PERSON EMPLOYEE Ola RFID_02 12
+
+# Ochroniarz (Startuje na Recepcji - ID 6)
+PERSON GUARD Marian 6
+
+# Intruz (Wchodzi przez Wejscie - ID 1, Cel: Serwerownia - ID 16)
+# Format: PERSON INTRUDER imie start_id cel_id
+PERSON INTRUDER Hacker_X 1 16
