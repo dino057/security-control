@@ -1,17 +1,17 @@
 #include "Intruder.h"
+#include "Room.h"
 
 Intruder::Intruder(const std::string& name, Room* startRoom, Room* targetRoom)
     : Person(name, startRoom),
     targetRoom(targetRoom),
-    hasStolen(false) // Na poczatku intruz ma idealny kamuflaz
+    escapeRoom(startRoom), // Ustawiamy startRoom jako miejsce ucieczki
+    hasStolen(false)
 {
 }
 
 bool Intruder::hasAccess()
 {
-    // Udaje pracownika (zwraca true) dopoki nie zdobedzie danych.
-    // Gdy tylko dokona kradziezy (hasStolen == true), traci kamuflaz
-    // i system alarmowy w serwerowni natychmiast go wykrywa!
+    // Udaje pracownika (zwraca true) dopóki nie zdobędzie danych.
     if (!hasStolen)
     {
         return true;
@@ -29,6 +29,11 @@ Room* Intruder::getTargetRoom() const
     return targetRoom;
 }
 
+Room* Intruder::getEscapeRoom() const
+{
+    return escapeRoom;
+}
+
 bool Intruder::isMissionAccomplished() const
 {
     return hasStolen;
@@ -37,4 +42,6 @@ bool Intruder::isMissionAccomplished() const
 void Intruder::setMissionAccomplished()
 {
     hasStolen = true;
+    // Po kradzieży, celem może stać się ucieczka do punktu startowego
 }
+

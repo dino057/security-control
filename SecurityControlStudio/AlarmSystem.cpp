@@ -20,46 +20,17 @@ AlarmSystem::AlarmSystem(EventLog* log)
 
 void AlarmSystem::triggerAlarm(Room* room, Person* person, int stepNumber)
 {
-    if (room == nullptr || person == nullptr)
+    if (room == nullptr || person == nullptr) return;
+
+    if (!alarmActive) // Zeby nie spamowac logow co ture
     {
-        return;
-    }
-
-    alarmActive = true;
-
-    std::ostringstream alarmMessage;
-    alarmMessage << "[krok " << stepNumber << "] ALARM: czujnik w pokoju "
-                 << room->getId() << " (" << room->getName() << ") wykryl osobe bez dostepu: "
-                 << person->getName() << " (" << person->getKind() << ")";
-    log->add(alarmMessage.str());
-
-    const std::vector<Door*>& doors = room->getDoors();
-
-    if (doors.empty())
-    {
-        log->add("[krok " + std::to_string(stepNumber) + "] Pokoj nie ma drzwi do zablokowania.");
-        return;
-    }
-
-    for (std::size_t i = 0; i < doors.size(); ++i)
-    {
-        Door* door = doors[i];
-
-        if (door != nullptr && !door->isLocked())
-        {
-            door->lock();
-
-            Room* a = door->getFirstRoom();
-            Room* b = door->getSecondRoom();
-
-            std::ostringstream lockMessage;
-            lockMessage << "[krok " << stepNumber << "] Zablokowano drzwi "
-                        << a->getId() << " <-> " << b->getId();
-            log->add(lockMessage.str());
-        }
+        alarmActive = true;
+        std::ostringstream alarmMessage;
+        alarmMessage << "[Krok " << stepNumber << "] ALARM! Kamera w "
+                     << room->getName() << " wykryla intruza! Ochrona rozpoczyna poscig!";
+        log->add(alarmMessage.str());
     }
 }
-
 bool AlarmSystem::isAlarmActive() const
 {
     return alarmActive;

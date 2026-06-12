@@ -87,6 +87,43 @@ bool Simulation::loadFromFile(const std::string& fileName, std::string& errorMes
     loaded = true;
     eventLog->add("[start] Wczytano mape: " + fileName);
     eventLog->add("[start] Liczba osob: " + std::to_string(people.size()));
+
+    // --- DYNAMICZNE LOSOWANIE MIEJSCA NA ŁUP DLA KAŻDEJ NOWEJ SYMULACJI ---
+    const std::vector<Room*>& allRooms = building->getRooms();
+    if (!allRooms.empty())
+    {
+        for (std::size_t i = 0; i < people.size(); ++i)
+        {
+            if (people[i] != nullptr && people[i]->getKind() == "intruz")
+            {
+                Intruder* intruder = dynamic_cast<Intruder*>(people[i]);
+                if (intruder != nullptr)
+                {
+                    Room* randomTarget = nullptr;
+                    // Losujemy pokój tak długo, aż będzie inny niż pokój, w którym intruz zaczyna
+                    if (allRooms.size() > 1)
+                    {
+                        do {
+                            int randIdx = std::rand() % allRooms.size();
+                            randomTarget = allRooms[randIdx];
+                        } while (randomTarget == intruder->getCurrentRoom());
+                    }
+                    else
+                    {
+                        randomTarget = allRooms[0];
+                    }
+
+                    // Ustawiamy nowy cel intruzowi
+                    intruder->setTargetRoom(randomTarget);
+                    if (eventLog != nullptr)
+                    {
+                        eventLog->add("[System] Nowa symulacja! Łup został losowo ukryty w: " + randomTarget->getName());
+                    }
+                }
+            }
+        }
+    }
+
     return true;
 }
 
@@ -308,137 +345,100 @@ bool Simulation::parseDoorsAndPeople(const std::string& fileName, std::string& e
     return true;
 }
 
+
 void Simulation::movePeople()
 {
-    bool alarm = alarmSystem->isAlarmActive();
+    Intruder* intruder = nullptr;
+    std::vector<Guard*> guards;
 
-    Room* intruderRoom = nullptr;
-    Intruder* intruderObj = nullptr;
-    for (std::size_t i = 0; i < people.size(); ++i)
-    {
-        if (people[i] != nullptr && people[i]->getKind() == "intruz")
-        {
-            intruderObj = static_cast<Intruder*>(people[i]);
-            intruderRoom = intruderObj->getCurrentRoom();
-            break;
+    // 1. Zbieramy referencje do intruza i ochrony
+    for (std::size_t i = 0; i < people.size(); ++i) {
+        if (people[i] != nullptr && people[i]->getKind() == "intruz") intruder = dynamic_cast<Intruder*>(people[i]);
+        if (people[i] != nullptr && people[i]->getKind() == "ochroniarz") guards.push_back(dynamic_cast<Guard*>(people[i]));
+    }
+
+    // 2. Sprawdzenie ZLAPANIA (Przed ruchem)
+    if (intruder != nullptr) {
+        for (Guard* g : guards) {
+            if (g->getCurrentRoom() == intruder->getCurrentRoom()) {
+                if (eventLog) eventLog->add("[KONIEC] Ochroniarz zlapal intruza w " + g->getCurrentRoom()->getName() + "! Napad udaremniony.");
+                finished = true;
+                return;
+            }
         }
     }
 
+    // 3. Ruch wszystkich postaci
     for (std::size_t i = 0; i < people.size(); ++i)
     {
         Person* person = people[i];
-        if (person == nullptr || person->getCurrentRoom() == nullptr) continue;
+        if (person == nullptr) continue;
 
-        Room* currentRoom = person->getCurrentRoom();
-        Room* globalTarget = nullptr;
-
-        if (person->getKind() == "pracownik")
+        if (person->getKind() == "ochroniarz")
         {
-            if (alarm)
-            {
-                globalTarget = building->findRoomById(1);
+            Guard* guard = dynamic_cast<Guard*>(person);
+            // JESLI JEST ALARM - OCHRONIARZ GONI INTRUZA
+            if (alarmSystem->isAlarmActive() && intruder != nullptr) {
+                Room* next = getNextRoomTowards(guard->getCurrentRoom(), intruder->getCurrentRoom());
+                if (next != nullptr) guard->move(next);
             }
-            else
-            {
-                const std::vector<Door*>& roomDoors = currentRoom->getDoors();
-                if (!roomDoors.empty())
-                {
+            else { // Zwykly losowy patrol
+                std::vector<Door*> roomDoors = guard->getCurrentRoom()->getDoors();
+                if (!roomDoors.empty()) {
                     int r = std::rand() % roomDoors.size();
-                    Door* chosenDoor = roomDoors[r];
-                    if (!chosenDoor->isLocked())
-                    {
-                        Room* targetRoom = chosenDoor->getOtherRoom(currentRoom);
-                        int oldId = currentRoom->getId();
-                        person->move(targetRoom);
-                        eventLog->add("[krok " + std::to_string(stepNumber) + "] (pracownik) " + person->getName()
-                                      + " spaceruje z pokoju " + std::to_string(oldId) + " do " + std::to_string(targetRoom->getId()) + ".");
-                    }
+                    guard->move(roomDoors[r]->getOtherRoom(guard->getCurrentRoom()));
                 }
-                continue;
+            }
+        }
+        else if (person->getKind() == "pracownik")
+        {
+            // Zwykly losowy ruch pracownika
+            std::vector<Door*> roomDoors = person->getCurrentRoom()->getDoors();
+            if (!roomDoors.empty()) {
+                int r = std::rand() % roomDoors.size();
+                person->move(roomDoors[r]->getOtherRoom(person->getCurrentRoom()));
             }
         }
         else if (person->getKind() == "intruz")
         {
-            if (!intruderObj->isMissionAccomplished())
-            {
-                globalTarget = intruderObj->getTargetRoom();
-                if (currentRoom == globalTarget)
-                {
-                    intruderObj->setMissionAccomplished();
-                    eventLog->add("[krok " + std::to_string(stepNumber) + "] INTRUZ: " + person->getName() + " UKRADL DANE Z CELU! Teraz ucieka do wyjscia.");
-                    globalTarget = building->findRoomById(1);
-                }
+            // Intruz idzie do celu (najpierw łup, potem ucieczka)
+            Room* nextBestRoom = getNextRoomTowards(person->getCurrentRoom(), intruder->getTargetRoom());
+            if (nextBestRoom != nullptr) {
+                person->move(nextBestRoom);
             }
-            else
-            {
-                globalTarget = building->findRoomById(1);
+
+            // A. Czy kamera zauwazyla intruza w nowym pokoju?
+            if (intruder->getCurrentRoom()->hasCamera()) {
+                alarmSystem->triggerAlarm(intruder->getCurrentRoom(), intruder, stepNumber);
+            }
+
+            // B. Czy zabral lup?
+            if (intruder->getCurrentRoom() == intruder->getTargetRoom() && !intruder->isMissionAccomplished()) {
+                intruder->setMissionAccomplished(); // Tu cel intruza zmienia sie na wyjscie (escapeRoom)
+                if (eventLog) eventLog->add("[AKCJA] Intruz ZABRAL LUP! Zaczyna ucieczke w strone wyjscia (" + intruder->getEscapeRoom()->getName() + ")!");
+            }
+
+            // C. Czy uciekl z lupem? (Warunek Wygranej)
+            if (intruder->isMissionAccomplished() && intruder->getCurrentRoom() == intruder->getEscapeRoom()) {
+                if (eventLog) eventLog->add("[KONIEC] Intruz uciekl z lupem przez " + intruder->getEscapeRoom()->getName() + "! Napad zakonczony sukcesem.");
+                finished = true;
+                return;
             }
         }
-        else if (person->getKind() == "ochroniarz")
-        {
-            if (alarm && intruderRoom != nullptr)
-            {
-                globalTarget = intruderRoom;
-            }
-        }
+    }
 
-        if (globalTarget != nullptr && globalTarget != currentRoom)
-        {
-            Room* nextStep = nullptr;
-
-            // SZTUCZNA INTELIGENCJA INTRUZA: Probuje ominac straznikow!
-            if (person->getKind() == "intruz" && alarm)
-            {
-                nextStep = getNextRoomTowards(currentRoom, globalTarget, true); // tryb bezpieczny (bez strażników)
-                if (nextStep == nullptr)
-                {
-                    nextStep = getNextRoomTowards(currentRoom, globalTarget, false); // desperacka ucieczka
-                }
-            }
-            else
-            {
-                nextStep = getNextRoomTowards(currentRoom, globalTarget, false);
-            }
-
-            if (nextStep != nullptr)
-            {
-                bool canPass = true;
-                if (person->getKind() == "intruz")
-                {
-                    const std::vector<Door*>& roomDoors = currentRoom->getDoors();
-                    for (std::size_t d = 0; d < roomDoors.size(); ++d)
-                    {
-                        if (roomDoors[d]->getOtherRoom(currentRoom) == nextStep && roomDoors[d]->isLocked())
-                        {
-                            if (std::rand() % 100 < 40)
-                            {
-                                canPass = true;
-                                eventLog->add("[krok " + std::to_string(stepNumber) + "] INTRUZ " + person->getName() + " zhakowal zamek i omija blokade do pokoju " + std::to_string(nextStep->getId()) + "!");
-                            }
-                            else
-                            {
-                                canPass = false;
-                            }
-                            break;
-                        }
-                    }
-                }
-
-                if (canPass)
-                {
-                    int oldId = currentRoom->getId();
-                    person->move(nextStep);
-                    eventLog->add("[krok " + std::to_string(stepNumber) + "] (" + person->getKind() + ") " + person->getName()
-                                  + " przemieszcza sie z " + std::to_string(oldId) + " do " + std::to_string(nextStep->getId()) + ".");
-                }
-                else
-                {
-                    eventLog->add("[krok " + std::to_string(stepNumber) + "] Intruz " + person->getName() + " natrafil na ZABLOKOWANE drzwi do pokoju " + std::to_string(nextStep->getId()) + "!");
-                }
+    // 4. Sprawdzenie ZLAPANIA (Po ruchu)
+    if (intruder != nullptr) {
+        for (Guard* g : guards) {
+            if (g->getCurrentRoom() == intruder->getCurrentRoom()) {
+                if (eventLog) eventLog->add("[KONIEC] Ochroniarz zlapal intruza w " + g->getCurrentRoom()->getName() + "! Napad udaremniony.");
+                finished = true;
+                return;
             }
         }
     }
 }
+
 
 void Simulation::checkSensors()
 {

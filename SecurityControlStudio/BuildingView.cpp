@@ -165,6 +165,42 @@ void BuildingView::drawRooms(QPainter& painter, const QMap<const Room*, QRectF>&
             painter.drawText(QRectF(roomRect.right() - 18, roomRect.top() + 6, 12, 12), Qt::AlignCenter, "K");
         }
     }
+
+    // --- RYSOWANIE STAŁEJ IKONKI ŁUPU ---
+    if (simulation != nullptr)
+    {
+        const std::vector<Person*>& allPeople = simulation->getPeople();
+        for (std::size_t i = 0; i < allPeople.size(); ++i)
+        {
+            if (allPeople[i] != nullptr && allPeople[i]->getKind() == "intruz")
+            {
+                Intruder* intruder = dynamic_cast<Intruder*>(allPeople[i]);
+                // Ikonka rysuje się TYLKO WTEDY, gdy intruz jeszcze NIE zabrał łupu
+                if (intruder != nullptr && !intruder->isMissionAccomplished())
+                {
+                    Room* lootRoom = intruder->getTargetRoom();
+                    if (lootRoom != nullptr && roomRects.contains(lootRoom))
+                    {
+                        QRectF roomRect = roomRects[lootRoom];
+                        QPointF lootPos = roomRect.center() + QPointF(0, -20); // Pozycja lekko nad środkiem pokoju
+
+                        painter.save();
+                        // Rysujemy złote koło (ikonę łupu)
+                        painter.setBrush(QBrush(QColor(255, 215, 0))); // Kolor Gold
+                        painter.setPen(QPen(Qt::black, 1.5));
+                        painter.drawEllipse(lootPos, 11, 11);
+
+                        // Rysujemy czarny symbol dolara w środku kółka
+                        painter.setPen(Qt::black);
+                        painter.setFont(QFont("Arial", 10, QFont::Bold));
+                        painter.drawText(QRectF(lootPos.x() - 11, lootPos.y() - 11, 22, 22), Qt::AlignCenter, "$");
+                        painter.restore();
+                    }
+                }
+            }
+        }
+    }
+
 }
 
 QPointF BuildingView::personPoint(const Room* room, int localIndex, const QMap<const Room*, QRectF>& roomRects) const
