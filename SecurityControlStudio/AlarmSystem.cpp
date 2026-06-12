@@ -26,11 +26,15 @@ void AlarmSystem::triggerAlarm(Room* room, Person* person, int stepNumber)
     {
         alarmActive = true;
         std::ostringstream alarmMessage;
-        alarmMessage << "[Krok " << stepNumber << "] ALARM! Kamera w "
-                     << room->getName() << " wykryla intruza! Ochrona rozpoczyna poscig!";
+
+        // POPRAWKA: Używamy słowa "Czujnik", co jest zgodne z prawdą,
+        // a jeśli to była kamera, to i tak Simulation.cpp dopisze to ułamek sekundy wcześniej!
+        alarmMessage << "[Krok " << stepNumber << "] ALARM! Czujnik w pokoju "
+                     << room->getName() << " wykryl intruza! Ochrona rozpoczyna poscig!";
         log->add(alarmMessage.str());
     }
 }
+
 bool AlarmSystem::isAlarmActive() const
 {
     return alarmActive;

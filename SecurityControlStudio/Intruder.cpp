@@ -44,4 +44,7 @@ void Intruder::setMissionAccomplished()
     hasStolen = true;
     // Po kradzieży, celem może stać się ucieczka do punktu startowego
 }
-
+void Intruder::setTargetRoom(Room* newTarget)
+{
+    targetRoom = newTarget;
+}

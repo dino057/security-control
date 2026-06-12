@@ -18,6 +18,7 @@ public:
     // Metody specyficzne dla Intrudera
     Room* getTargetRoom() const;
     Room* getEscapeRoom() const;
+    void setTargetRoom(Room* newTarget);
     bool isMissionAccomplished() const;
     void setMissionAccomplished();
 
